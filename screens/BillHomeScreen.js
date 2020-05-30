@@ -1,5 +1,5 @@
-import React, { Component,useState,useEffect } from 'react';
-import { Text,FlatList, View, StyleSheet,RefreshControl} from 'react-native';
+import React, { useState,useEffect } from 'react';
+import { FlatList, View, StyleSheet,RefreshControl} from 'react-native';
 import {MaterialIcons} from '@expo/vector-icons';
 import Bill from '../components/Bill';
 import {TouchableRipple, Dialog,Portal,Paragraph,Button,Provider} from 'react-native-paper';
@@ -9,11 +9,9 @@ import {updateDate,createTable} from '../database/sqlitedb'
 const db=SQLite.openDatabase("billList.db");
 
 
-const HomeScreen=({navigation}) =>{
+const BillHomeScreen=({navigation}) =>{
   const [alertVisible,setAlertVisible]=useState(false)
   const [billList,setBillList]=useState([])
-  const [useEffectLoopController,setuseEffectLoopController]=useState(0)
-
   const [delid,setDelid]=useState('')
   const deleteBillPrompt =(delid) =>{
     setDelid(delid)
@@ -71,7 +69,7 @@ const HomeScreen=({navigation}) =>{
         //tx.executeSql('drop table bills');
       }
     )
-  },[useEffectLoopController])
+  },[])
   const didFocusSubscription = navigation.addListener(
     'didFocus',
     payload => {
@@ -113,7 +111,7 @@ const HomeScreen=({navigation}) =>{
         </Provider>
   </View>  
 }
-HomeScreen.navigationOptions = screenProps =>({
+BillHomeScreen.navigationOptions = screenProps =>({
   title: 'Bills',
         headerStyle: {
         backgroundColor: colors.primary,
@@ -128,6 +126,14 @@ HomeScreen.navigationOptions = screenProps =>({
         <MaterialIcons style={styles.add} size={30} name= "add" />
         </TouchableRipple>
         </View>
+      ),
+      headerLeft: ()=> (<View style={styles.menuradius}>
+        <TouchableRipple style={styles.ripple}
+        onPress={() => screenProps.navigation.openDrawer()}>
+        <MaterialIcons style={styles.menu} size={30} name= "menu" />
+        </TouchableRipple>
+        </View>
+
       ),
       animationEnabled: false,
 
@@ -144,6 +150,19 @@ const styles=StyleSheet.create({
     color:colors.text,
     right:-5,
     top:5
+  },
+  menu:{
+    color:colors.text,
+    left:5,
+    top:5
+  },
+  menuradius:{
+    borderRadius:20,
+    width:40,
+    height:40,
+    left:15,
+    overflow: 'hidden'
+
   },
   ripple:{position:'absolute',
     width:40,
@@ -169,4 +188,4 @@ dialogBackground:{
 }
 
 });
-export default HomeScreen;
+export default BillHomeScreen;
