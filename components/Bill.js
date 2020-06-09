@@ -4,31 +4,24 @@ import { TouchableRipple,Button } from 'react-native-paper';
 import colors from '../assets/colors'
 import {MaterialIcons} from '@expo/vector-icons';
 const Bill = ({data,del,edit}) =>{
+  const PayButton=()=>{
+    if(data['billURL']=='')
+    return null
+    else
+    return <Button mode="contained" style={styles.paybtn}
+    onPress={() => Linking.openURL('https://'+data['billURL'])}>Pay</Button> 
+  }
   const duecalc=() => {
-    var today=Date.now()
-    var dif=Math.floor((parseInt(data['billdate'])-today)/(1000*24*3600));
-    if(dif>=365)
-    {if(Math.floor(dif/365)==1)
-      return 'Bill due in '+Math.floor(dif/365)+' year'
-    else
-      return 'Bill due in '+Math.floor(dif/365)+' years';}
-    else if(dif>=31)
-    {if(Math.floor(dif/30)==1)
-      return 'Bill due in '+Math.floor(dif/30)+' month'
-     else 
-      return 'Bill due in '+Math.floor(dif/30)+' months';}
-    else if(dif>=7)
-    {if(Math.floor(dif/7)==1)
-      return 'Bill due in '+Math.floor(dif/7)+' week'
-     else 
-      return 'Bill due in '+Math.floor(dif/7)+' weeks';}
-    else
-    {if(dif==1)
-      return 'Bill due in '+dif+' day'
-     else if(dif==0)
-      return 'Bill due Today'
-     else 
-      return 'Bill due in '+dif+' days';}
+    var date=new Date(parseInt(data['billdate']))
+    var datestring
+    var day=date.getDate().toString()
+    day=day.padStart(2,'0')
+    var month=(date.getMonth()+1).toString()
+    month=month.padStart(2,'0')
+    var year=date.getFullYear().toString() 
+    datestring=day+"/"+month+"/"+year
+    return "Bill is due on: "+datestring
+
   }
     return <TouchableRipple
     borderless={true}
@@ -49,8 +42,7 @@ const Bill = ({data,del,edit}) =>{
     <Text style={styles.amount}>₹ {data['amount']}</Text>
     <Text style={styles.frequency}>{data['frequency']}</Text>
     <View style={{flex:1}}>
-    <Button mode="contained" style={styles.paybtn}
-     onPress={() => Linking.openURL('https://'+data['billURL'])}>Pay</Button>
+    <PayButton/>
     </View>
   </View>
   </TouchableRipple>

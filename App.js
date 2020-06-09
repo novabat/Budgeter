@@ -8,7 +8,8 @@ import EditBill from './screens/EditBill';
 import ExpenseHomeScreen from './screens/ExpenseHomeScreen'
 import {createDrawerNavigator, DrawerItems} from 'react-navigation-drawer'
 import colors from './assets/colors';
-
+import {Provider} from 'react-redux'
+import configureStore from './redux/store'
 const BillStack=createStackNavigator(
   {
   Home: BillHomeScreen,
@@ -50,6 +51,14 @@ const MyDrawerNavigator= createDrawerNavigator({
   inactiveTintColor:colors.text
   }
 })
-
-export default createAppContainer(MyDrawerNavigator)
+const AppContainer=createAppContainer(MyDrawerNavigator)
+const store=configureStore()
+const App = () =>{
+  return(
+    <Provider store={store}>
+      <AppContainer/>
+    </Provider>
+  )
+}
+export default App
 

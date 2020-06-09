@@ -1,97 +1,65 @@
 import React, { useState,useEffect } from 'react';
-import { FlatList, View, StyleSheet,RefreshControl} from 'react-native';
+import { FlatList, View, StyleSheet,RefreshControl,ActivityIndicator,Text} from 'react-native';
 import {MaterialIcons} from '@expo/vector-icons';
 import Bill from '../components/Bill';
-import {TouchableRipple, Dialog,Portal,Paragraph,Button,Provider} from 'react-native-paper';
+import {TouchableRipple, Dialog,Portal,Paragraph,Button,Provider,} from 'react-native-paper';
 import colors from '../assets/colors';
 import * as SQLite from 'expo-sqlite';
 import {updateDate,createTable} from '../database/sqlitedb'
+import {getBills,deleteBill} from '../redux/Bill/billActions'
+import {connect} from 'react-redux'
+
 const db=SQLite.openDatabase("billList.db");
 
 
-const BillHomeScreen=({navigation}) =>{
+const BillHomeScreen=(props) =>{
   const [alertVisible,setAlertVisible]=useState(false)
-  const [billList,setBillList]=useState([])
   const [delid,setDelid]=useState('')
   const deleteBillPrompt =(delid) =>{
     setDelid(delid)
     setAlertVisible(true)
-    /*db.transaction(
-      tx =>{
-        tx.executeSql(`delete from bills where id = ?;`, [a]);
-        tx.executeSql(`select * from bills`, [], (_,{ rows }) =>
-        {setBillList(rows["_array"])}
-      );
-      }
-    )*/
   }
   const hideDialog=() =>{
     setAlertVisible(false)
   }
   const editBill=(data) =>{
-    navigation.navigate('EditBill',data)
+    props.navigation.navigate('EditBill',data)
   }
   const deleteBill=() =>{
-    db.transaction(
-      tx =>{
-        tx.executeSql(`delete from bills where id = ?;`, [delid]);
-        tx.executeSql(`select * from bills`, [], (_,{ rows }) =>
-        {setBillList(rows["_array"])}
-      );
-      }
-    )
+    props.deleteBill(delid)
     setAlertVisible(false)
   }
   const onRefresh=()=> {
-    //Clear old data of the list
-    setBillList([])
-
-    //Call the Service to get the latest data
-    //SQLiteDb.updateDate()
-    db.transaction(
-      tx => {tx.executeSql(`select * from bills`, [], (_,{ rows }) =>
-      {setBillList(rows["_array"])}
-    );}
-
-    )
-    
+    updateDate()
+    props.getBills()
   }
 
-  useEffect(()=>{
-    createTable()
-    updateDate()
-    db.transaction(
-      tx => {
-        tx.executeSql(`select * from bills`, [], (_,{ rows }) =>{
-          setBillList(rows["_array"])
-        });
-        //tx.executeSql(`delete from bills;`);
-        //tx.executeSql('drop table bills');
-      }
-    )
-  },[])
-  const didFocusSubscription = navigation.addListener(
-    'didFocus',
-    payload => {
-      db.transaction(
-        tx =>{
-          tx.executeSql(`select * from bills`, [], (_,{ rows }) =>
-          {setBillList(rows["_array"])}
-        );
-        }
-      )
+  useEffect( ()=>{
+    const listener = props.navigation.addListener('didFocus',async() => {
+      createTable()
+      await updateDate()
+      props.getBills()
+    })
+    return function cleanup(){
+      listener.remove();
     }
-  );
-    return <View style={styles.base}>
-        <FlatList data={billList}
+  },[])
+    return (
+      
+    <View style={styles.base}>
+      {props.isLoading?
+      <ActivityIndicator />:
+      <View>
+        <FlatList data={props.bills}
         keyExtractor={item => item.id}
         renderItem={({ item }) => <Bill data={item} del={(delid) =>deleteBillPrompt(delid)} edit={data => editBill(data)}/>}
         refreshControl={
           <RefreshControl
-            //refresh control used for the Pull to Refresh
             refreshing={false}
         onRefresh={onRefresh}/>} 
          />
+         </View>
+        }
         <Provider>
         <Portal>
           <Dialog
@@ -109,7 +77,7 @@ const BillHomeScreen=({navigation}) =>{
           </Dialog>
         </Portal>
         </Provider>
-  </View>  
+  </View>)
 }
 BillHomeScreen.navigationOptions = screenProps =>({
   title: 'Bills',
@@ -188,4 +156,18 @@ dialogBackground:{
 }
 
 });
-export default BillHomeScreen;
+
+const mapStateToProps = state =>{
+  return{
+    isLoading:state.billReducer.isLoading,
+    bills:state.billReducer.billList
+  }
+}
+
+const mapDispatchToProps = dispatch =>{
+  return {
+    getBills: ()=>dispatch(getBills()),
+    deleteBill:(id)=>dispatch(deleteBill(id))
+  }
+}
+export default connect(mapStateToProps,mapDispatchToProps)(BillHomeScreen);

@@ -19,7 +19,7 @@ var frequency = [{
   }, {
     value: 'Quarterly',
   }, {
-    value: 'Annualy',
+    value: 'Annually',
   }];
 
 export {category,frequency}

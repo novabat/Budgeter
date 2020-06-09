@@ -9,6 +9,8 @@ import { Dropdown } from 'react-native-material-dropdown';
 import * as SQLite from 'expo-sqlite'
 import moment from "moment";
 import {category,frequency} from '../assets/commonData'
+import {connect} from 'react-redux'
+import {editBill} from '../redux/Bill/billActions'
 
 const db = SQLite.openDatabase("billList.db");
 
@@ -21,8 +23,8 @@ class EditBill extends React.Component {
     amount:JSON.stringify(this.props.navigation.getParam('amount')),
     billName:this.props.navigation.getParam('billname'),
     billURL:this.props.navigation.getParam('billURL'),
-    category:JSON.stringify(this.props.navigation.getParam('category')),
-    frequency:JSON.stringify(this.props.navigation.getParam('frequency')),
+    category:this.props.navigation.getParam('category'),
+    frequency:this.props.navigation.getParam('frequency'),
   dateError:false};
   };
 formatText =(text)=>{
@@ -73,15 +75,23 @@ formatText =(text)=>{
    }
    if(dateErr==0 && billNameErr==0 && amountErr==0 )
     {var amount=parseInt(this.state.amount)
-  db.transaction(
+    var data={
+        id:this.props.navigation.getParam('id'),
+        billName:this.state.billName,
+        amount:amount,
+        billDate:date.toString(),
+        category:this.state.category,
+        frequency:this.state.frequency,
+        billURL:this.state.billURL,
+      
+    }
+    this.props.editBill(data)
+  /*db.transaction(
     tx =>{
       tx.executeSql(`update bills set billname=?,amount=?,billdate=?,category=?,frequency=?,billURL=? where id=?`,
       [this.state.billName,amount,date.toString(),this.state.category,this.state.frequency,this.state.billURL,this.props.navigation.getParam('id')]);
-      /*tx.executeSql(`select * from bills`, [], (_,{ rows }) =>
-          {console.log(rows)}
-        );*/
     },
-  )
+  )*/
   this.props.navigation.navigate('Home')
   } 
 }
@@ -136,7 +146,7 @@ formatText =(text)=>{
         onChangeText={(billURL) => this.setState({billURL})}
         inputContainerStyle={styles.inputbox} label='Bill Payment Website' />
         <Dropdown
-       value={category[0]['value']}
+       value={this.state.category}
        labelFontSize={14}
        itemColor={colors.text}
        selectedItemColor={colors.text}
@@ -151,7 +161,7 @@ formatText =(text)=>{
         data={category}
       />
       <Dropdown
-       value={frequency[0]['value']}
+       value={this.state.frequency}
        labelFontSize={14}
        itemColor={colors.text}
        selectedItemColor={colors.text}
@@ -221,4 +231,15 @@ const styles = StyleSheet.create({
   },
 
 });
-export default EditBill;
+const mapStateToProps = state =>{
+  return{
+    bills:state.billReducer.billList
+  }
+}
+
+const mapDispatchToProps = dispatch =>{
+  return {
+    editBill:(id)=>dispatch(editBill(id))
+  }
+}
+export default connect(mapStateToProps,mapDispatchToProps)(EditBill);

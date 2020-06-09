@@ -8,6 +8,8 @@ import { Dropdown } from 'react-native-material-dropdown';
 import * as SQLite from 'expo-sqlite'
 import moment from "moment";
 import {category,frequency} from '../assets/commonData'
+import {addBill} from '../redux/Bill/billActions'
+import {connect} from 'react-redux'
 
 const db = SQLite.openDatabase("billList.db");
 
@@ -33,7 +35,7 @@ formatText =(text)=>{
       return text
   
  };
- submit=()=>{
+ submit=async ()=>{
    var dateErr=0;
    var billNameErr=0;
    var amountErr=0;
@@ -42,7 +44,6 @@ formatText =(text)=>{
    this.setState({amountError:false});
    var today=moment().toDate().getTime()
    var date=moment(this.state.billDate,"DD/MM/YYYY").toDate().getTime()
-   date+=86400000  //add 1 day so that difference calculation is accurate
    if(!(/^([0-2][0-9]|(3)[0-1])(\/)(((0)[0-9])|((1)[0-2]))(\/)\d{4}$/.test(this.state.billDate))||date<today)
    {
     this.setState({dateError:true});
@@ -62,28 +63,32 @@ formatText =(text)=>{
     {var amount=parseInt(this.state.amount)
     var id= new ObjectID();
     id=id.toString()
-  db.transaction(
+  var data={
+    id:id,
+    billName:this.state.billName,
+    amount:amount,
+    billDate:date.toString(),
+    category:this.state.category,
+    frequency:this.state.frequency,
+    billURL:this.state.billURL,
+    prevBill:"NA"
+  }
+  await this.props.addBill(data)
+  /*db.transaction(
     tx =>{
       tx.executeSql(`insert into bills (id,billname,amount,billdate,category,frequency,billURL,prevbill) values(?,?,?,?,?,?,?,?)`,
       [id,this.state.billName,amount,date.toString(),this.state.category,this.state.frequency,this.state.billURL,"NA"]);
-      /*tx.executeSql(`select * from bills`, [], (_,{ rows }) =>
-          {console.log(rows)}
-        );*/
+      
     },
-  )
+  )*/
   this.props.navigation.navigate('Home')
   } 
 }
 
   render(){
-
-    
     return (
-
     <View style={styles.base}>
-      
       <ScrollView>
-      
       <FilledTextField
         textColor={colors.text}
         tintColor={colors.primary}
@@ -158,9 +163,7 @@ formatText =(text)=>{
         data={frequency}
       />
       <Button style={styles.done} mode='contained' onPress={() =>this.submit() }>Done</Button>
-      
         </ScrollView>
-        
         </View>
     );
   }
@@ -212,4 +215,17 @@ const styles = StyleSheet.create({
   },
 
 });
-export default NewBill;
+const mapStateToProps = state =>{
+  return{
+    isLoading:state.billReducer.isLoading,
+    bills:state.billReducer.billList
+  }
+}
+
+const mapDispatchToProps = dispatch =>{
+  return {
+    addBill: (data)=>dispatch(addBill(data)),
+  }
+}
+export default connect(mapStateToProps,mapDispatchToProps)(NewBill);
+
